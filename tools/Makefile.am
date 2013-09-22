@@ -1,5 +1,5 @@
-AM_CFLAGS = -I$(top_srcdir)/include
-AM_LDFLAGS = 
+AM_CFLAGS = $(curl_CFLAGS) $(zlib_CFLAGS) $(crippy_CFLAGS) -I$(top_srcdir)/include
+AM_LDFLAGS = $(curl_LIBS) $(zlib_LIBS) $(crippy_LIBS)
 
 bin_PROGRAMS = partialzip
 partialzip_SOURCES = partialzip.c

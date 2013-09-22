@@ -15,8 +15,9 @@ AC_LANG_C
 AC_HEADER_STDC
 AC_CONFIG_MACRO_DIR([m4])
 
-PKG_CHECK_MODULES(libzip, libzip >= 1.0)
-PKG_CHECK_MODULES(libcurl, libcurl >= 1.0)
+PKG_CHECK_MODULES(zlib, zlib >= 1.0)
+PKG_CHECK_MODULES(curl, libcurl >= 1.0)
+PKG_CHECK_MODULES(crippy, libcrippy-1.0 >= 1.0)
 
 AC_CONFIG_FILES(Makefile src/Makefile include/Makefile tools/Makefile libpartialzip-1.0.pc)
 

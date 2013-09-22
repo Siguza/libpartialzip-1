@@ -203,7 +203,7 @@ struct partialzip_info {
 };
 
 
-partialzip_info_t* partialzip_init(const char* url);
+partialzip_info_t* partialzip_open(const char* url);
 partialzip_cd_file_t* partialzip_find_file(partialzip_info_t* info, const char* fileName);
 partialzip_cd_file_t* partialzip_list_files(partialzip_info_t* info);
 unsigned char* partialzip_get_file(partialzip_info_t* info, partialzip_cd_file_t* file);

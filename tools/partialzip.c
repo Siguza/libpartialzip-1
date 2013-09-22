@@ -27,9 +27,7 @@
 
 
 void download_callback(partialzip_info_t* info, partialzip_cd_file_t* file, size_t progress) {
-	if (progress_callback)
-		progress_callback(progress, user_object);
-	}
+	print_progress(progress, NULL);
 }
 
 
@@ -39,9 +37,10 @@ void usage() {
 
 int main(int argc, char* argv[]) {
 	if(argc != 4) {
+		usage();
 		return -1;
 	}
-	int x = partialzip_download_file(argv[1], argv[2], argv[3], (partialzip_progress_callback_t)print_progress);
+	int x = partialzip_download_file(argv[1], argv[2], argv[3], (partialzip_progress_callback_t)download_callback);
 	if(x < 0) {
 		printf("Unable to download file\n");
 		return -1;
