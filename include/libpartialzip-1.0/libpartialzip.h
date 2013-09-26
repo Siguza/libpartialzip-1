@@ -166,7 +166,7 @@ typedef struct {
 	uint16_t internalAttr;
 	uint32_t externalAttr;
 	uint32_t offset;
-} ATTRIBUTE_PACKED partialzip_cd_file_t;
+} ATTRIBUTE_PACKED partialzip_file_t;
 
 typedef struct {
 	uint32_t signature;
@@ -186,9 +186,9 @@ typedef struct {
 #pragma pack(pop)
 #endif
 
-typedef struct partialzip_info partialzip_info_t;
+typedef struct partialzip_info partialzip_t;
 
-typedef void (*partialzip_progress_callback_t)(partialzip_info_t* info, partialzip_cd_file_t* file, size_t progress);
+typedef void (*partialzip_progress_callback_t)(partialzip_t* info, partialzip_file_t* file, size_t progress);
 
 struct partialzip_info {
 	char* url;
@@ -203,13 +203,14 @@ struct partialzip_info {
 };
 
 
-partialzip_info_t* partialzip_open(const char* url);
-partialzip_cd_file_t* partialzip_find_file(partialzip_info_t* info, const char* fileName);
-partialzip_cd_file_t* partialzip_list_files(partialzip_info_t* info);
-unsigned char* partialzip_get_file(partialzip_info_t* info, partialzip_cd_file_t* file);
-void partialzip_close(partialzip_info_t* info);
+partialzip_t* partialzip_open(const char* url);
+partialzip_file_t* partialzip_find_file(partialzip_t* info, const char* fileName);
+partialzip_file_t* partialzip_list_files(partialzip_t* info);
+unsigned char* partialzip_get_file(partialzip_t* info, partialzip_file_t* file);
+void partialzip_close(partialzip_t* info);
 int partialzip_download_file(const char* url, const char* path, const char* output, partialzip_progress_callback_t progressCallback);
-void partialzip_set_progress_callback(partialzip_info_t* info, partialzip_progress_callback_t progressCallback);
+void partialzip_set_progress_callback(partialzip_t* info, partialzip_progress_callback_t progressCallback);
+void partialzip_free_file(partialzip_file_t* file);
 
 #ifdef __cplusplus
 }

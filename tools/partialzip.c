@@ -26,7 +26,7 @@
 #include <libpartialzip-1.0/libpartialzip.h>
 
 
-void download_callback(partialzip_info_t* info, partialzip_cd_file_t* file, size_t progress) {
+void download_callback(partialzip_t* info, partialzip_file_t* file, size_t progress) {
 	print_progress(progress, NULL);
 }
 

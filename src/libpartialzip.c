@@ -40,8 +40,8 @@ char endianness = IS_LITTLE_ENDIAN;
 
 int partialzip_download_file(const char* url, const char* path, const char* output, partialzip_progress_callback_t progressCallback) {
 	FILE* fd;
-	partialzip_cd_file_t* file;
-	partialzip_info_t* info;
+	partialzip_file_t* file;
+	partialzip_t* info;
 	unsigned int size;
 	unsigned char* data;
 
@@ -90,13 +90,13 @@ static size_t dummyReceive(void* data, size_t size, size_t nmemb, void* info) {
 	return size * nmemb;
 }
 
-static size_t receiveCentralDirectoryEnd(void* data, size_t size, size_t nmemb, partialzip_info_t* info) {
+static size_t receiveCentralDirectoryEnd(void* data, size_t size, size_t nmemb, partialzip_t* info) {
 	memcpy(info->centralDirectoryEnd + info->centralDirectoryEndRecvd, data, size * nmemb);
 	info->centralDirectoryEndRecvd += size * nmemb;
 	return size * nmemb;
 }
 
-static size_t receiveCentralDirectory(void* data, size_t size, size_t nmemb, partialzip_info_t* info) {
+static size_t receiveCentralDirectory(void* data, size_t size, size_t nmemb, partialzip_t* info) {
 	memcpy(info->centralDirectory + info->centralDirectoryRecvd, data, size * nmemb);
 	info->centralDirectoryRecvd += size * nmemb;
 	return size * nmemb;
@@ -105,8 +105,8 @@ static size_t receiveCentralDirectory(void* data, size_t size, size_t nmemb, par
 static size_t receiveData(void* data, size_t size, size_t nmemb, void** pFileData) {
 	memcpy(pFileData[0], data, size * nmemb);
 	pFileData[0] = ((char*)pFileData[0]) + (size * nmemb);
-	partialzip_info_t* info = ((partialzip_info_t*)pFileData[1]);
-	partialzip_cd_file_t* file = ((partialzip_cd_file_t*)pFileData[2]);
+	partialzip_t* info = ((partialzip_t*)pFileData[1]);
+	partialzip_file_t* file = ((partialzip_file_t*)pFileData[2]);
 	size_t* progress = ((size_t*)pFileData[3]);
 
 	if(progress) {
@@ -122,14 +122,14 @@ static size_t receiveData(void* data, size_t size, size_t nmemb, void** pFileDat
 	return size * nmemb;
 }
 
-static partialzip_cd_file_t* flipFiles(partialzip_info_t* info)
+static partialzip_file_t* flipFiles(partialzip_t* info)
 {
 	char* cur = info->centralDirectory;
 
 	unsigned int i;
 	for(i = 0; i < info->centralDirectoryDesc->CDEntries; i++)
 	{
-		partialzip_cd_file_t* candidate = (partialzip_cd_file_t*) cur;
+		partialzip_file_t* candidate = (partialzip_file_t*) cur;
 		FLIPENDIANLE(candidate->signature);
 		FLIPENDIANLE(candidate->version);
 		FLIPENDIANLE(candidate->versionExtract);
@@ -148,15 +148,15 @@ static partialzip_cd_file_t* flipFiles(partialzip_info_t* info)
 		// FLIPENDIANLE(candidate->externalAttr);
 		FLIPENDIANLE(candidate->offset);
 
-		cur += sizeof(partialzip_cd_file_t) + candidate->lenFileName + candidate->lenExtra + candidate->lenComment;
+		cur += sizeof(partialzip_file_t) + candidate->lenFileName + candidate->lenExtra + candidate->lenComment;
 		return candidate;
 	}
 	return NULL;
 }
 
-partialzip_info_t* partialzip_open(const char* url)
+partialzip_t* partialzip_open(const char* url)
 {
-	partialzip_info_t* info = (partialzip_info_t*) malloc(sizeof(partialzip_info_t));
+	partialzip_t* info = (partialzip_t*) malloc(sizeof(partialzip_t));
 	info->url = strdup(url);
 	info->centralDirectoryRecvd = 0;
 	info->centralDirectoryEndRecvd = 0;
@@ -270,32 +270,32 @@ partialzip_info_t* partialzip_open(const char* url)
 	}
 }
 
-partialzip_cd_file_t* partialzip_find_file(partialzip_info_t* info, const char* fileName)
+partialzip_file_t* partialzip_find_file(partialzip_t* info, const char* fileName)
 {
 	char* cur = info->centralDirectory;
 	unsigned int i;
 	for(i = 0; i < info->centralDirectoryDesc->CDEntries; i++)
 	{
-		partialzip_cd_file_t* candidate = (partialzip_cd_file_t*) cur;
-		const char* curFileName = cur + sizeof(partialzip_cd_file_t);
+		partialzip_file_t* candidate = (partialzip_file_t*) cur;
+		const char* curFileName = cur + sizeof(partialzip_file_t);
 
 		if(strlen(fileName) == candidate->lenFileName && strncmp(fileName, curFileName, candidate->lenFileName) == 0)
 			return candidate;
 
-		cur += sizeof(partialzip_cd_file_t) + candidate->lenFileName + candidate->lenExtra + candidate->lenComment;
+		cur += sizeof(partialzip_file_t) + candidate->lenFileName + candidate->lenExtra + candidate->lenComment;
 	}
 
 	return NULL;
 }
 
-partialzip_cd_file_t* partialzip_list_files(partialzip_info_t* info)
+partialzip_file_t* partialzip_list_files(partialzip_t* info)
 {
 	char* cur = info->centralDirectory;
 	unsigned int i;
 	for(i = 0; i < info->centralDirectoryDesc->CDEntries; i++)
 	{
-		partialzip_cd_file_t* candidate = (partialzip_cd_file_t*) cur;
-		const char* curFileName = cur + sizeof(partialzip_cd_file_t);
+		partialzip_file_t* candidate = (partialzip_file_t*) cur;
+		const char* curFileName = cur + sizeof(partialzip_file_t);
 		char* myFileName = (char*) malloc(candidate->lenFileName + 1);
 		memcpy(myFileName, curFileName, candidate->lenFileName);
 		myFileName[candidate->lenFileName] = '\0';
@@ -305,13 +305,13 @@ partialzip_cd_file_t* partialzip_list_files(partialzip_info_t* info)
 
 		free(myFileName);
 
-		cur += sizeof(partialzip_cd_file_t) + candidate->lenFileName + candidate->lenExtra + candidate->lenComment;
+		cur += sizeof(partialzip_file_t) + candidate->lenFileName + candidate->lenExtra + candidate->lenComment;
 	}
 
 	return NULL;
 }
 
-unsigned char* partialzip_get_file(partialzip_info_t* info, partialzip_cd_file_t* file)
+unsigned char* partialzip_get_file(partialzip_t* info, partialzip_file_t* file)
 {
 	count = 0;
 	partialzip_local_file_t localHeader;
@@ -381,12 +381,12 @@ unsigned char* partialzip_get_file(partialzip_info_t* info, partialzip_cd_file_t
 	return fileData;
 }
 
-void partialzip_set_progress_callback(partialzip_info_t* info, partialzip_progress_callback_t progressCallback)
+void partialzip_set_progress_callback(partialzip_t* info, partialzip_progress_callback_t progressCallback)
 {
 	info->progressCallback = progressCallback;
 }
 
-void partialzip_close(partialzip_info_t* info)
+void partialzip_close(partialzip_t* info)
 {
 	curl_easy_cleanup(info->hIPSW);
 	free(info->centralDirectory);
@@ -396,3 +396,9 @@ void partialzip_close(partialzip_info_t* info)
 	curl_global_cleanup();
 }
 
+
+void partialzip_free_file(partialzip_file_t* file) {
+	if(file) {
+		free(file);
+	}
+}
